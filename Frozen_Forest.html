@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Frozen Forest</title>
+    <script src="http://threejs.org/build/three.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://rawgithub.com/mrdoob/three.js/master/examples/js/SimplexNoise.js"></script>
+    <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+    <link href='https://fonts.googleapis.com/css?family=Pacifico' rel='stylesheet' type='text/css'>
+
+</head>
+<style>
+    body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000000;
+    }
+    body, html{
+        background-color: black;
+        text-align: center;
+        font-family: 'Ropa Sans', sans-serif;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+</style>
+<body>
+<div id="WebGL-output">
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function(e) {
+    });
+    var camera;
+    var webGLRenderer;
+    function init() {
+        ThreeSimplexNoise = SimplexNoise;     
+        threeSimplex = new ThreeSimplexNoise();
+        var scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer.setClearColor(new THREE.Color(0x3f547a));
+        webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+        scene.fog = new THREE.Fog( 0x3f547a, 300, 500 );
+        camera.position.x = 150;
+        camera.position.y = 100;
+        camera.position.z = 150;
+
+        camera.rotation.y += 0.25;
+        camera.rotation.x -= 0.25;
+        var light	= new THREE.AmbientLight( 0x888888 );
+	    scene.add( light );
+        var cameraControls;
+        cameraControls = new THREE.OrbitControls(camera, webGLRenderer.domElement);
+        document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
+        var cloud;
+        var trees;
+
+        createParticles(2.5, true, 0.8, true, true, 0xffffff, 0);
+        createParticles(.8, true, 0.6, true, true, 0xffffff, 1);
+
+        render();
+        function createParticles(size, transparent, opacity, vertexColors, sizeAttenuation, color, type) {
+            var geom = new THREE.Geometry();
+            var material = new THREE.PointsMaterial({
+                size: size,
+                transparent: transparent,
+                opacity: opacity,
+                vertexColors: vertexColors,
+                sizeAttenuation: sizeAttenuation,
+                color: color
+            });
+            if(type){
+                createSnowVerts(geom);
+                cloud = new THREE.Points(geom, material);
+                cloud.name = "particles";
+                scene.add(cloud);
+            }
+            else{
+                createTreeVerts(geom);
+                trees = new THREE.Points(geom, material);
+                trees.name = "particles";
+                scene.add(trees);
+            }
+        }//end createParticles
+    
+        function createTreeVerts(geom){
+            for (var i = -500; i < 500; i++) {
+                for (var j = -500; j < 500; j++) {
+                    var z = threeSimplex.noise(i/8, j/8);
+                    var particle = new THREE.Vector3(i,z*10,j);
+                    geom.vertices.push(particle);
+                    var color = new THREE.Color(0.25+z, 0.4+z, 0.52+z);
+                    color.setHSL(color.getHSL().h, color.getHSL().s, color.getHSL().l);
+                    geom.colors.push(color);
+                }
+            }
+        }//end createTreeVerts
+
+        function createSnowVerts(geom){
+            var range = 1000;
+            for (var i = 0; i < 300000; i++) {
+                var particle = new THREE.Vector3(
+                    Math.random() * range - range / 2, 
+                    Math.abs(Math.random() * range - range / 2) + 20, 
+                    Math.random() * range - range / 2);
+                geom.vertices.push(particle);
+                var color = new THREE.Color(0xffffff);
+                color.setHSL(color.getHSL().h, color.getHSL().s, color.getHSL().l);
+                geom.colors.push(color);
+            }
+        }//end createSnowVerts
+
+        function render() {
+            trees.rotation.y -= 0.001;
+            cloud.rotation.y -= 0.0015;
+            requestAnimationFrame(render);
+            webGLRenderer.render(scene, camera);
+        }
+    }//end init
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+        }//end onResize
+
+    window.onload = init;
+    window.addEventListener('resize', onResize, false);
+</script>
+</body>
+</html>
